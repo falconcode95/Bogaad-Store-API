@@ -31,10 +31,16 @@ app.get('/products/:category/:id', async(req,res) => {
 app.get('/users', async(req,res) => {
   try {
     const object = req.headers;
-    const query = await pool.query(`SELECT * FROM users WHERE email = '${object.email}';`);
+    // console.log(object)
+    let query = await pool.query(`SELECT * FROM users WHERE email = '${object.email}';`);
     const dbResponse = query.rows[0];
     if(dbResponse.password === object.password){
+      query = await pool.query(`SELECT * FROM user_data WHERE user_id = '${dbResponse.id}';`);
+      const normalQuery = query.rows[0];
       delete dbResponse.password;
+      dbResponse.jsonCart = normalQuery.cart_data;
+      dbResponse.jsonWishList = normalQuery.wishlist_data;
+      console.log(dbResponse)
       res.status(200).send(JSON.stringify(dbResponse));
     } else {
       res.status(401).send()
@@ -90,11 +96,39 @@ app.delete('/users', async(req, res)=> {
   }
 })
 
-app.get('/test', async(req,res)=> {
+app.post('/userdata', async(req,res)=> {
   try {
-    let query = await pool.query('SELECT * FROM test;');
-    res.status(200).send(query.rows[0]);
+    const object = req.body;
+
+    console.log(object);
+    // console.log(object.email, object.wishlist, object.json)
+    let query = await pool.query(`SELECT * FROM users WHERE email = '${object.email}';`);
+    const userId = query.rows[0].id;
+    if(object.jsonCart && object.jsonWishList){
+    query = await pool.query(`INSERT INTO user_data (user_id, cart_data, wishlist_data) 
+          VALUES (${userId}, '${JSON.stringify(object.jsonCart)}', '${JSON.stringify(object.jsonWishList)}')
+          ON CONFLICT (user_id) 
+          DO
+          UPDATE SET cart_data = EXCLUDED.cart_data, wishlist_data = EXCLUDED.wishlist_data;`);
+          console.log('first if')
+    } else if(object.jsonCart && !object.jsonWishList){
+      query = await pool.query(`INSERT INTO user_data (user_id, cart_data) 
+      VALUES (${userId}, '${JSON.stringify(object.jsonCart)}')
+      ON CONFLICT (user_id) 
+      DO
+      UPDATE SET cart_data = EXCLUDED.cart_data;`);
+      console.log('second if')
+    } else if(!object.jsonCart && object.jsonWishList){
+      query = await pool.query(`INSERT INTO user_data (user_id, wishlist_data) 
+      VALUES (${userId},'${JSON.stringify(object.jsonWishList)}')
+      ON CONFLICT (user_id) 
+      DO
+      UPDATE SET wishlist_data = EXCLUDED.wishlist_data;`);
+      console.log('third if')
+    }
+    res.status(201).send(JSON.stringify({dataReceived: true}));
   } catch(e){
+    res.status(400).send(e.message)
     console.log(e.message)
   }
 })
@@ -109,3 +143,9 @@ app.listen(port, () => {
 //     `INSERT INTO trousers (id, image) VALUES (${i}, pg_read_binary_file('C://Users/Public/Product Images/trousers/${i} trouser.png'));`
 //   )
 // }
+
+
+// INSERT INTO test (name, surname, year) VALUES ('abdi', 'warsame', 1994)
+// ON CONFLICT (name)
+// DO 
+// UPDATE SET surname = EXCLUDED.surname, year = EXCLUDED.year;
