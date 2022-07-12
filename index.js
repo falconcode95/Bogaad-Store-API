@@ -1,7 +1,6 @@
 const Pool = require('pg').Pool;
 const cors = require('cors');
 const CryptoJS = require('crypto-js');
-// const { response } = require('express');
 const jwt = require('jsonwebtoken');
 const express = require('express');
 require('dotenv').config();
@@ -12,9 +11,11 @@ const pool = new Pool({
   user: process.env.USER,
   port: process.env.db_PORT,
   password: process.env.PASSWORD,
-  database: process.env.DATABASE
+  database: process.env.DATABASE,
+  ssl: {
+    rejectUnauthorized: false,
+  }
 })
-
 app.use(express.json());
 app.use(cors());
 
@@ -27,23 +28,26 @@ app.post('/payment', async (req, res)=> {
       success_url: 'http://localhost:3000/success',
       cancel_url: 'http://localhost:3000/Cart'
     })
-    console.log(session.url)
     res.json({url: session.url})
   } catch (error) {
     console.log(error)
   }
 })
 
-app.get('/products/:category/:id', async(req,res) => {
+app.get('/products/:category', async(req,res) => {
   try {
     const urlParams = req.params
-    const data = parseInt(urlParams.id);
-    const text = 'SELECT * FROM ' + urlParams.category + ' WHERE id = $1'
-    const values = [data]
-    const query = await pool.query(text, values);
-    const b64 = query.rows[0].image
-    res.setHeader('Content-type', 'image/jpg');
-    res.send(b64);
+    // const data = parseInt(urlParams.id);
+    // const text = 'SELECT * FROM ' + urlParams.category + ' WHERE id = $1'
+    // const values = [data]
+    const query = await pool.query('SELECT * FROM ' + urlParams.category);
+    // console.log(query);
+    // const links = query.rows.map(item => item.link);
+    const link = query.rows;
+    const response = link.map(item => item.link)
+    // console.log(link)
+    // res.setHeader('Content-type', 'text/html');
+    res.send(response);
     } catch (e) {
       console.log(e.message)
   }
