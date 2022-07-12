@@ -19,6 +19,10 @@ const pool = new Pool({
 app.use(express.json());
 app.use(cors());
 
+app.get('/', (req, res)=> {
+  res.send('<h1>Welcome to Bogaad Store API!</h1>')
+})
+
 app.post('/payment', async (req, res)=> {
   try {  
     const session = await stripe.checkout.sessions.create({
