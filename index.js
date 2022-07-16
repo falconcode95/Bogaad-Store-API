@@ -194,16 +194,3 @@ app.post('/userdata', async(req,res)=> {
 app.listen(process.env.PORT || 5000, () => {
   console.log(`Server is listening on port ${process.env.PORT}`)
 })
-
-
-// for(let i = 1; i < 9; i++){
-//   console.log(
-//     `INSERT INTO trousers (id, image) VALUES (${i}, pg_read_binary_file('C://Users/Public/Product Images/trousers/${i} trouser.png'));`
-//   )
-// }
-
-
-// INSERT INTO test (name, surname, year) VALUES ('abdi', 'warsame', 1994)
-// ON CONFLICT (name)
-// DO 
-// UPDATE SET surname = EXCLUDED.surname, year = EXCLUDED.year;
